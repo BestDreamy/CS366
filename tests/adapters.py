@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import os
+import os, sys
 from typing import IO, Any, BinaryIO
 from collections.abc import Iterable
 from jaxtyping import Float, Int
@@ -9,7 +9,8 @@ import numpy.typing as npt
 import torch
 from torch import Tensor
 
-
+# sys.path.append(os.path.abspath("../cs336_basics"))
+from cs336_basics.train_bpe import train_bpe_model
 
 def run_linear(
     d_in: int,
@@ -588,4 +589,6 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    raise NotImplementedError
+    # uv run pytest tests/test_train_bpe.py
+    vocab, merges = train_bpe_model(input_path, vocab_size, special_tokens)
+    return vocab, merges
