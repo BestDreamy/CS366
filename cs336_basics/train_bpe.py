@@ -65,12 +65,12 @@ def train_bpe_model(
             tokens_lst.extend(segments)
     # print(tokens_lst)
 
-    vocab_lst = [
-        special_token_bytes if i == 0 else bytes([i - 1]) for i in range(257)
-    ]
+    vocab_dict = {
+        i: special_token_bytes if i == 0 else bytes([i - 1]) for i in range(257)
+    }
     merge_lst = []
 
-    for _ in range(len(vocab_lst), vocab_size):
+    for idx in range(len(vocab_dict), vocab_size):
         count = defaultdict(int)
         # Find the most frequent byte pair in the tokens_lst
         for it in tokens_lst:
@@ -79,10 +79,11 @@ def train_bpe_model(
                 count[pair] += 1
         if not count:
             break
-        max_pair = max(count, key=count.get)
+        # max_pair = max(count, key=count.get)
+        max_pair = max(count, key=lambda k: (count.get(k), k))
 
         new_vocab = max_pair[0] + max_pair[1]
-        vocab_lst.append(new_vocab)
+        vocab_dict[idx] = new_vocab
         merge_lst.append(max_pair)
 
         new_tokens_lst = []
@@ -100,7 +101,7 @@ def train_bpe_model(
 
         tokens_lst = new_tokens_lst
     
-    return vocab_lst, merge_lst
+    return vocab_dict, merge_lst
 
 
 # if __name__ == '__main__':
