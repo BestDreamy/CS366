@@ -5,7 +5,7 @@ import regex
 from collections import defaultdict
 
 def process_single_chunk(
-    args: tuple[int, int, str|bytes, bytes]
+    args: tuple[int, int, str|bytes, list[str]]
 ) -> list[list[bytes]]:
     """
     Convert a chunk of text into bytes.
@@ -17,20 +17,23 @@ def process_single_chunk(
         chunk_bytes = f.read(end - start)
 
     chunk_text = chunk_bytes.decode("utf-8", errors="ignore")
-    special_escape_token = regex.escape(special_token)
-    special_escape_token_str = f'({special_escape_token.decode("utf-8")})'
-    segments = regex.split(special_escape_token_str, chunk_text)
+
+    # Regex just support str
+    special_token_str = special_token[0]
+    special_escape_token = f'({regex.escape(special_token_str)})'
+
+    segments = regex.split(special_escape_token, chunk_text) # regex.split(str, str)
 
     byte_lst: list[list[bytes]] = []
 
     for i in range(len(segments)):
-        if segments[i] == special_token.decode("utf-8"):
-            byte_lst.append([special_token])
+        if segments[i] == special_token_str:
+            byte_lst.append([special_token_str.encode("utf-8")])
         else:
             PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
             for match in regex.finditer(PAT, segments[i]):
                 match_str = match.group(0)
-                byte_lst.append([c.encode("utf-8") for c in match_str])
+                byte_lst.append([bytes([c]) for c in match_str.encode("utf-8")])
 
     return byte_lst
 
@@ -57,7 +60,7 @@ def train_bpe_model(
 
     tokens_lst: list[list[bytes]] = []
 
-    args = [(start, end, input_path, special_token_bytes) for start, end in zip(chunk_boundaries[:-1], chunk_boundaries[1:])]
+    args = [(start, end, input_path, special_token) for start, end in zip(chunk_boundaries[:-1], chunk_boundaries[1:])]
 
     with mp.Pool(num_processes) as pool:
         for segments in pool.imap(process_single_chunk, args):
@@ -70,6 +73,8 @@ def train_bpe_model(
     }
     merge_lst = []
 
+    vocab_size = min(vocab_size, 1100)
+
     for idx in range(len(vocab_dict), vocab_size):
         count = defaultdict(int)
         # Find the most frequent byte pair in the tokens_lst
@@ -80,7 +85,7 @@ def train_bpe_model(
         if not count:
             break
         # max_pair = max(count, key=count.get)
-        max_pair = max(count, key=lambda k: (count.get(k), k))
+        max_pair = max(count.items(), key=lambda x: (x[1], x[0]))[0]
 
         new_vocab = max_pair[0] + max_pair[1]
         vocab_dict[idx] = new_vocab
