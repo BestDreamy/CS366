@@ -10,7 +10,7 @@ import torch
 from torch import Tensor
 
 # sys.path.append(os.path.abspath("../cs336_basics"))
-from cs336_basics.train_bpe import train_bpe_model
+from cs336_basics.train_bpe import BPETokenizer
 
 def run_linear(
     d_in: int,
@@ -590,5 +590,5 @@ def run_train_bpe(
                 Merges are ordered by order of creation.
     """
     # uv run pytest tests/test_train_bpe.py
-    vocab, merges = train_bpe_model(input_path, vocab_size, special_tokens)
+    vocab, merges = BPETokenizer(input_path, vocab_size, special_tokens)
     return vocab, merges
