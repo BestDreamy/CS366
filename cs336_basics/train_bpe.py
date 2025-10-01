@@ -71,13 +71,46 @@ def split_by_special(
         pattern = f"({pattern})"
 
     text_chunks: list[str] = re.split(pattern, text)
-    return [text_chunk for text_chunk in text_chunks if text_chunk] # Drop special token
+    return [text_chunk for text_chunk in text_chunks if text_chunk]
 
 def process_single_chunk(
-    args: tuple[int, int, str, list[str]]
+    text: str,
+    special_tokens: list[str],
+    drop_special=True,
+    word_is_unique=True
 ) -> tuple[list[bytes], Counter[bytes]]:
     PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 
+    # Pre-Tokenization
+    # 1. Split by special tokens
+    text_chunks: list[str] = split_by_special(text, special_tokens, drop_special)
+
+    # 2. Statistics words on each chunk
+    words: list[bytes] = []
+    word2count: Counter[bytes] = Counter()
+
+    for text_chunk in text_chunks:
+        if text_chunk in special_tokens:
+            word = text_chunk.encode("utf-8")
+            word2count[word] += 1
+            if word2count[word] == 1 or not word_is_unique:
+                words.append(word)
+            continue
+
+        partial_words = re.findall(PAT, text_chunk)
+
+        for word in partial_words:
+            word = word.encode("utf-8")
+            word2count[word] += 1
+
+            if word2count[word] == 1 or not word_is_unique:
+                words.append(word)
+    
+    return words, word2count
+    
+def process_single_chunk_from_file(
+    args: tuple[int, int, str, list[str]]
+) -> tuple[list[bytes], Counter[bytes]]:
     start, end, input_path, special_tokens = args
 
     with open(input_path, "rb") as f:
@@ -86,25 +119,7 @@ def process_single_chunk(
 
     chunk_text: str = chunk_bytes.decode("utf-8", errors="ignore")
 
-    # Pre-Tokenization
-    # 1. Split by special tokens
-    text_chunks: list[str] = split_by_special(chunk_text, special_tokens)
-
-    # 2. Statistics words on each chunk
-    words: list[bytes] = []
-    word2count: Counter[bytes] = Counter()
-
-    for text_chunk in text_chunks:
-        partial_words = re.findall(PAT, text_chunk)
-
-        for word in partial_words:
-            word = word.encode("utf-8")
-            word2count[word] += 1
-
-            if word2count[word] == 1:
-                words.append(word)
-    
-    return words, word2count
+    return process_single_chunk(chunk_text, special_tokens)
 
 
 def BPETokenizer(
@@ -129,7 +144,7 @@ def BPETokenizer(
     word2count: Counter[bytes] = Counter()
 
     with mp.Pool(num_process) as pool:
-        for single_chunk_words, single_chunk_word2count in pool.imap(process_single_chunk, args):
+        for single_chunk_words, single_chunk_word2count in pool.imap(process_single_chunk_from_file, args):
             for word in single_chunk_words:
                 if word2count[word] == 0:
                     words.append(word)
