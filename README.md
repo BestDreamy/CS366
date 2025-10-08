@@ -47,3 +47,4 @@
 
 ## Resources
 - [Course Home](https://stanford-cs336.github.io/spring2025/)
+- [DP,TP,PP,SP,ZeRO](https://www.cnblogs.com/marsggbo/p/16871789.html)
