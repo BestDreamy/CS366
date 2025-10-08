@@ -235,6 +235,26 @@ def train(args):
             tqdm.write(f"[Checkpoint @ Iter {t}] Saved to {args.checkpoint_path}")
 
 if __name__ == '__main__':
+    import numpy as np
+
+    # def txt_to_npy(txt_path, npy_path):
+    #     with open(txt_path, 'r') as f:
+    #         data = f.read().splitlines()
+        
+    #     # Convert each line to a list of integers
+    #     tokenized_data = [list(map(int, line.split())) for line in data]
+        
+    #     # Flatten the list of lists into a 1D array
+    #     flattened_data = np.array([token for seq in tokenized_data for token in seq], dtype=np.int32)
+        
+    #     # Save as .npy
+    #     np.save(npy_path, flattened_data)
+    #     print(f"Saved {npy_path}")
+
+    # # Example usage
+    # txt_to_npy('/root/work/cs336/assignment1-basics/data/TinyStoriesV2-GPT4-train.txt', '/root/work/cs336/assignment1-basics/data/train_data.npy')
+    # txt_to_npy('/root/work/cs336/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt', '/root/work/cs336/assignment1-basics/data/valid_data.npy')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_data_path', type=str, required=True)
     parser.add_argument('--val_data_path', type=str, required=True)

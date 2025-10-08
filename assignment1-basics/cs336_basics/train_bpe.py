@@ -131,7 +131,7 @@ def BPETokenizer(
     special_byte_tokens: list[bytes] = [it.encode("utf-8") for it in special_tokens]
 
     # Step 1: Split the file according to special tokens
-    num_process: int = 1 # mp.cpu_count()
+    num_process: int = mp.cpu_count()
     with open(input_path, "rb") as f:
         chunk_boundaries: list[int] = find_chunk_boundaries(
             f, num_process, special_byte_tokens
